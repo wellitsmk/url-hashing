@@ -9,8 +9,5 @@ Used
 - Node Js - Fast and asynchronous, can handle multiple requests simultaneously. 
 - Redis - Fast, in-memory key–value database, supports different data structures.
 
-Steps
-- <code>npm install</code>
-- <code>node server.js</code>
 
 

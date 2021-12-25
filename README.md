@@ -1,5 +1,8 @@
 # url-hashing
-#### A simple short url generator using Redis, Node.js & Express
+#### A simple short url generator using Redis, Node.js & Express 
+
+[Live Demo](http://18.117.171.98/)
+
 <br></br>
 
 Requirements

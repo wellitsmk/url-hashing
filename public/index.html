@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Hasher</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+</head>
+<body>
+    <div class="container">
+        <div class="w-100 py-3 px-5 bg-light ">
+            <div class="h3 text-primary">
+                URL Hasher
+            </div>
+        </div>
+
+        <div class="w-75 mx-auto p-5 position-relative">
+
+            <div class="mt-5 mb-3" id="url-to-hash">
+                <span class="mx-3 d-inline-block bg-primary text-white btn rounded-circle"
+                    title="Click to get your original URL from hashed-url..."
+                    onclick="switchTo(1)"
+                    >
+                    &#8651;
+                </span>
+                <label for="url-to-hash-input" class="mb-3">
+                    Enter a long URL to make a hashed-url
+                </label>
+                <div class="input-group">
+                    <input type="url" id="url-to-hash-input" class="form-control"
+                        placeholder="Enter a long URL..."
+                        />
+                    <button class="btn btn-primary" type="button" id="url-to-hash-button">
+                        Click to hash
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-5 mb-3" id="hash-to-url" style="display: none;">
+                <span class="mx-3 d-inline-block bg-primary text-white btn rounded-circle"
+                    title="Click to create a new hashed-url..."
+                    onclick="switchTo(0)"
+                    >
+                    &#8651;
+                </span>
+                <label for="hash-to-url-input" class="mb-3">
+                    Enter a hashed-url to get the original url
+                </label>
+                
+                <div class="input-group">
+                    <input type="url" id="hash-to-url-input" class="form-control"
+                        placeholder="Enter your hashed URL..."
+                        />
+                    <button class="btn btn-info" type="button" id="hash-to-url-button">
+                        View original URL!
+                    </button>
+                </div>
+            </div>
+
+            <div class="text-center p-5 position-absolute top-0 left-0 w-100 h-100"
+                id="spinner-div"
+                style="display: none;left:0;background:#fff;z-index: 99;">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+
+            <div class="m-5 flex justify-content-center" id="copy-div" style="display: none">
+                <div class="alert-success py-2 px-3 overflow-hidden btn w-100"
+                    onclick="copyTextToClipboard()"
+                    >
+                    URL
+                </div>
+                <button class="btn btn-primary w-100" type="button" id="copy-button">
+                    &#x2398; Click to copy
+                </button>
+                <input type="text" id="copy-input" value="hhhh"
+                    class="position-fixed"
+                    style="top: -100vh; left:-100vw;"
+                    />
+            </div>
+
+        </div>
+
+        <div class=" bg-light text-center text-secondary small mt-4">
+            &copy; 2021
+        </div>
+
+    </div>
+</body>
+<script>
+
+    const switchLink = document.querySelector('#switch-to-link')
+    const hash2url = document.querySelector('#hash-to-url')
+    const url2hash = document.querySelector('#url-to-hash')
+    const spinner = document.querySelector('#spinner-div')
+
+    const url2hashInput = document.querySelector('#url-to-hash-input')
+    const hash2urlInput = document.querySelector('#hash-to-url-input')
+    const url2hashButton = document.querySelector('#url-to-hash-button')
+    const hash2urlButton = document.querySelector('#hash-to-url-button')
+
+    const copyInput = document.querySelector('#copy-input')
+    const copyButton = document.querySelector('#copy-button')
+    const copyDiv = document.querySelector('#copy-div')
+    const copyDisplayUrlDiv = document.querySelector('#copy-div > div')
+    
+    const changeVisibility = ( container, hide ) => {
+        container.style.display = hide ? 'none' : ''
+    }
+
+    const switchTo = function( d ){
+        if( d ){
+            changeVisibility( url2hash, true )
+            changeVisibility( hash2url, false )
+        }
+        else {
+            changeVisibility( url2hash, false )
+            changeVisibility( hash2url, true )
+        }
+    }
+
+    const isValidUrl = (str) => {
+        try {
+            return new URL(str)
+        } catch (err) {
+            return false
+        }
+    }
+
+    const post = ( url, body ) => {
+        let request = new Request( url, {
+            method: 'POST',
+            mode: 'cors',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        })
+        return fetch( request ).then(d => d.json()).catch(e => ({error: e}) )
+    }
+
+    url2hashButton.addEventListener('click', async () => {
+        let input = url2hashInput.value
+
+        if( !input || !isValidUrl(input)  ){
+            alert('Enter a valid url')
+            return;
+        }
+
+        changeVisibility( spinner, false )
+
+        let data = await post('/api/hash', { url: input })
+        if( data && data.hash ){
+            let url = window.location.origin + '/' + data.hash
+            changeVisibility( url2hash, true )
+            changeVisibility( copyDiv, false )
+            copyInput.value = url
+            copyDisplayUrlDiv.innerText = url
+        }
+        else {
+            alert('Server error')
+            changeVisibility( url2hash, false )
+        }
+
+        changeVisibility( spinner, true )
+    })
+
+    hash2urlButton.addEventListener('click', async () => {
+        let input = hash2urlInput.value
+
+        if( !input || !isValidUrl(input)  ){
+            alert('Enter a valid url')
+            return;
+        }
+
+        let hash = isValidUrl(input).pathname.replace('/','')
+
+        changeVisibility( spinner, false )
+
+        let data = await post('/api/url', { hash })
+        if( data && data.url ){
+            let url = data.url
+            changeVisibility( hash2url, true )
+            changeVisibility( copyDiv, false )
+            copyInput.value = url
+            copyDisplayUrlDiv.innerText = url
+        }
+        else {
+            alert('Server error')
+            changeVisibility( hash2url, false )
+        }
+
+        changeVisibility( spinner, true )
+    })
+
+    copyButton.addEventListener('click', copyTextToClipboard )
+
+    function copyTextToClipboard(text) {
+        copyInput.focus();
+        copyInput.select();
+
+        try {
+            var successful = document.execCommand('copy');
+            var msg = successful ? 'successful' : 'unsuccessful';
+            console.log('Fallback: Copying text command was ' + msg);
+        } catch (err) {
+            console.error('Fallback: Oops, unable to copy', err);
+        }
+    }
+
+</script>
+</html>
